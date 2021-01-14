@@ -297,6 +297,8 @@ to speed up various operations::
     [redis]
     location=redis://127.0.0.1:6379/1
     sessions=false
+    use_sentinel=false
+    password=password
 
 ``location``
     The location of redis, as a URL of the form ``redis://[:password]@localhost:6379/0``
@@ -304,6 +306,16 @@ to speed up various operations::
 
 ``session``
     When this is set to ``True``, redis will be used as the session storage.
+
+``use_sentinel``
+    If you don't want to use redis sentinels, you can omit this option.
+    If this is set to ``True``, redis via sentinels will be used instead of plain redis.
+    In this case the location should be of the form ``my_master/sentinel_host_1:2639,sentinel_host_2:2639/0``
+    You cannot provide a password within the location when using sentinels.
+
+``password``
+    If your redis setup doesn't require a password or you already specified it in the location you can omit this option.
+    If this is set it will be passed to redis as the connection option PASSWORD.
 
 If redis is not configured, pretix will store sessions and locks in the database. If memcached
 is configured, memcached will be used for caching instead of redis.
@@ -337,10 +349,21 @@ an AMQP server (e.g. RabbitMQ) as a broker and redis or your database as a resul
     [celery]
     broker=amqp://guest:guest@localhost:5672//
     backend=redis://localhost/0
+    broker_transport_options="{}"
+    backend_transport_options="{}"
 
 RabbitMQ might be the better choice if you have a complex, multi-server, high-performance setup,
 but as you already should have a redis instance ready for session and lock storage, we recommend
 redis for convenience. See the `Celery documentation`_ for more details.
+
+The two ``transport_options`` entries can be omitted in most cases.
+If they are present they need to be a valid JSON dictionary.
+For possible entries in that dictionary see the `Celery documentation`_.
+
+To use redis with sentinels set the broker or backend to ``sentinel://sentinel_host_1:26379;sentinal_host_2:26379/0``
+and the respective transport_options to ``{"master_name":"mymaster"}``.
+If your redis instances behind the sentinel have a password use ``sentinel://:my_password@sentinel_host_1:26379;sentinal_host_2:26379/0``.
+If your redis sentinels themselves have a password set the transport_options to ``{"master_name":"mymaster","sentinel_kwargs":{"password":"my_password"}}``.
 
 Sentry
 ------
