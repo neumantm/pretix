@@ -243,23 +243,30 @@ if HAS_MEMCACHED:
     }
 
 HAS_REDIS = config.has_option('redis', 'location')
+USE_REDIS_SENTINEL = config.getboolean('redis', 'use_sentinel', fallback=False)
+HAS_REDIS_PASSWORD = config.has_option('redis', 'password')
 if HAS_REDIS:
+    OPTIONS = {
+        "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        "REDIS_CLIENT_KWARGS": {"health_check_interval": 30}
+    }
+
+    if USE_REDIS_SENTINEL:
+        OPTIONS["CLIENT_CLASS"] = "django_sentinel.SentinelClient"
+
+    if HAS_REDIS_PASSWORD:
+        OPTIONS["PASSWORD"] = config.get('redis', 'password')
+
     CACHES['redis'] = {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": config.get('redis', 'location'),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "REDIS_CLIENT_KWARGS": {"health_check_interval": 30}
-        }
+        "OPTIONS": OPTIONS
     }
     CACHES['redis_sessions'] = {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": config.get('redis', 'location'),
         "TIMEOUT": 3600 * 24 * 30,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "REDIS_CLIENT_KWARGS": {"health_check_interval": 30}
-        }
+        "OPTIONS": OPTIONS
     }
     if not HAS_MEMCACHED:
         CACHES['default'] = CACHES['redis']
