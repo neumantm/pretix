@@ -254,6 +254,7 @@ if HAS_REDIS:
 
     if USE_REDIS_SENTINEL:
         OPTIONS["CLIENT_CLASS"] = "django_sentinel.SentinelClient"
+        OPTIONS["SENTINEL_TIMEOUT"] = 10
 
     if HAS_REDIS_PASSWORD:
         OPTIONS["PASSWORD"] = config.get('redis', 'password')
